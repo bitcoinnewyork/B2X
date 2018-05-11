@@ -27,12 +27,12 @@ NOTE: Building with Qt4 is still supported, however, could result in a broken UI
 Build Bitcoin Core
 ------------------------
 
-1. Clone the BitcoinX source code and cd into `BitcoinX`
+1. Clone the Bitcoin NewYork source code and cd into `Bitcoinnewyork`
 
-        git clone https://github.com/bitcoin2m/BitcoinX.git
-        cd BitcoinX
+        git clone https://github.com/bitcoinnewyork/Bitcoinnyc.git 
+        cd Bitcoinnyc
 
-2.  Build BitcoinX:
+2.  Build Bitcoin NewYork:
 
     Configure and build the headless bitcoin binaries as well as the GUI (if Qt is found).
 
@@ -53,19 +53,19 @@ Build Bitcoin Core
 Running
 -------
 
-BitcoinX is now available at `./src/btc2d`
+BitcoinNewYork is now available at `./src/btc2d`
 
 Before running, it's recommended you create an RPC configuration file.
 
-    echo -e "rpcuser=bitcoinrpc\nrpcpassword=$(xxd -l 16 -p /dev/urandom)" > "$HOME/Library/Application Support/BitcoinGold/bitcoin.conf"
+    echo -e "rpcuser=bitcoinrpc\nrpcpassword=$(xxd -l 16 -p /dev/urandom)" > "$HOME/Library/Application Support/BitcoinNewYork/bitcoin.conf"
 
-    chmod 600 "$HOME/Library/Application Support/BitcoinGold/bitcoin.conf"
+    chmod 600 "$HOME/Library/Application Support/BitcoinNewYork/bitcoin.conf"
 
 The first time you run btc2d, it will start downloading the blockchain. This process could take several hours.
 
 You can monitor the download process by looking at the debug.log file:
 
-    tail -f $HOME/Library/Application\ Support/BitcoinGold/debug.log
+    tail -f $HOME/Library/Application\ Support/BitcoinNewYork/debug.log
 
 Other commands:
 -------

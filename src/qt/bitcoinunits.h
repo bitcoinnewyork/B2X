@@ -52,7 +52,7 @@ public:
     explicit BitcoinUnits(QObject *parent);
 
     /** Bitcoin units.
-     *  Bitcoin units (BitcoinX unit work the same as Bitoin).
+     *  Bitcoin units (Bitcoin NewYork unit work the same as Bitoin).
      *  @note Source: https://en.bitcoin.it/wiki/Units . 
      *  Please add only sensible ones
      */

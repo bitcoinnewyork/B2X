@@ -1,13 +1,13 @@
 [Desktop Entry]
 Encoding=UTF-8
-Name=BitcoinX
-Comment=Connect to the BitcoinX P2P Network
-Comment[de]=Verbinde mit dem Bitcoin peer-to-peer Netzwerk
-Comment[fr]=Bitcoin, monnaie virtuelle cryptographique pair à pair
-Comment[tr]=Bitcoin, eşten eşe kriptografik sanal para birimi
+Name=Bitcoin NewYork
+Comment=Connect to the BitcoinNewYork P2P Network
+Comment[de]=Verbinde mit dem BitcoinNewYork peer-to-peer Netzwerk
+Comment[fr]=BitcoinNewYork, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=BitcoinNewYork, eşten eşe kriptografik sanal para birimi
 Exec=bitcoin-qt %u
 Terminal=false
 Type=Application
 Icon=bitcoin128
-MimeType=x-scheme-handler/bitcoingold;
+MimeType=x-scheme-handler/bitcoin2;
 Categories=Office;Finance;

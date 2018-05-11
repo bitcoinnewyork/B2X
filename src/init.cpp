@@ -418,7 +418,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-whitelist=<IP address or network>", _("Whitelist peers connecting from the given IP address (e.g. 1.2.3.4) or CIDR notated network (e.g. 1.2.3.0/24). Can be specified multiple times.") +
         " " + _("Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway"));
     strUsage += HelpMessageOpt("-maxuploadtarget=<n>", strprintf(_("Tries to keep outbound traffic under the given target (in MiB per 24h), 0 = no limit (default: %d)"), DEFAULT_MAX_UPLOAD_TARGET));
-    strUsage += HelpMessageOpt("-bootstrap", _("Enables BitcoinX bootstrap mode. Allows btc2 client to connect to Bitcoin p2p network to download blockahin history."));
+    strUsage += HelpMessageOpt("-bootstrap", _("Enables BitcoinNewYork bootstrap mode. Allows btc2 client to connect to Bitcoin p2p network to download blockahin history."));
     strUsage += HelpMessageOpt("-skiphardforkibd", _("Skip Initial Block Download when reaching hardfork block."));
 
 #ifdef ENABLE_WALLET
