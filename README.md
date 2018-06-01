@@ -15,4 +15,4 @@ the details will be publiced when mainnetworks online.
 ## Links
 
 * Website: http://bitcoinnewyork.org
-* Twitter： @bitcoin2m
+* Twitter： @bitcoinNYA
