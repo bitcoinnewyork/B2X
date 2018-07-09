@@ -352,21 +352,25 @@ static bool IsCurrentForFeeEstimation()
     return true;
 }
 
-bool static IsBTGHardForkEnabled(int nHeight, const Consensus::Params& params) {
+bool static IsBTC2ProgForkEnabled(int nHeight, const Consensus::Params& params) {
+    return nHeight >= params.ProgForkHeight;
+}
+
+bool static IsBTC2HardForkEnabled(int nHeight, const Consensus::Params& params) {
     return nHeight >= params.BTGHeight;
 }
 
-bool IsBTGHardForkEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params) {
+bool IsBTC2HardForkEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params) {
     if (pindexPrev == nullptr) {
         return false;
     }
 
-    return IsBTGHardForkEnabled(pindexPrev->nHeight, params);
+    return IsBTC2HardForkEnabled(pindexPrev->nHeight, params);
 }
 
-bool IsBTGHardForkEnabledForCurrentBlock(const Consensus::Params& params) {
+bool IsBTC2HardForkEnabledForCurrentBlock(const Consensus::Params& params) {
     AssertLockHeld(cs_main);
-    return IsBTGHardForkEnabled(chainActive.Tip(), params);
+    return IsBTC2HardForkEnabled(chainActive.Tip(), params);
 }
 
 /* Make mempool consistent after a reorg, by re-adding or recursively erasing
@@ -1018,11 +1022,22 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus:
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
 
-    // Check Equihash solution
-    bool postfork = block.nHeight >= (uint32_t)consensusParams.BTGHeight;
-    if (postfork && !CheckEquihashSolution(&block, Params())) {
-        return error("ReadBlockFromDisk: Errors in block header at %s (bad Equihash solution)", pos.ToString());
+    // Check ProgPow/Equihash solution
+    bool postfork = false;
+    if (block.nHeight >= (uint32_t)consensusParams.ProgForkHeight) {
+        postfork = true;
+        if (!CheckProgPow(&block, Params())) {
+            return error("ReadBlockFromDisk: Errors in block header at %s (bad Progpow solution)", 
+                         pos.ToString());
+        }
+    } else if (block.nHeight >= (uint32_t)consensusParams.BTGHeight) {
+        postfork = true;
+        if (!CheckEquihashSolution(&block, Params())) {
+            return error("ReadBlockFromDisk: Errors in block header at %s (bad Equihash solution)",
+                          pos.ToString());
+        }
     }
+
     // Check the header
     if (!CheckProofOfWork(block.GetHash(), block.nBits, postfork, consensusParams))
         return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
@@ -1638,7 +1653,7 @@ static unsigned int GetBlockScriptFlags(const CBlockIndex* pindex, const Consens
         flags |= SCRIPT_VERIFY_NULLDUMMY;
     }
 
-    if (IsBTGHardForkEnabled(pindex->pprev, consensusparams)) {
+    if (IsBTC2HardForkEnabled(pindex->pprev, consensusparams)) {
         flags |= SCRIPT_VERIFY_STRICTENC;
     } else {
         flags |= SCRIPT_ALLOW_NON_FORKID;
@@ -2798,12 +2813,23 @@ static bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, 
 
 static bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
-    // Check Equihash solution is valid
     bool postfork = block.nHeight >= (uint32_t)consensusParams.BTGHeight;
-    if (fCheckPOW && postfork && !CheckEquihashSolution(&block, Params())) {
-        LogPrintf("CheckBlockHeader(): Equihash solution invalid at height %d\n", block.nHeight);
-        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
-                         REJECT_INVALID, "invalid-solution");
+    if (fCheckPOW && postfork) {
+        if ((block.nHeight < (uint32_t)consensusParams.ProgForkHeight)) {
+            // Check Equihash solution is valid
+            if (!CheckEquihashSolution(&block, Params())) {
+                LogPrintf("CheckBlockHeader(): Equihash solution invalid at height %d\n", block.nHeight);
+                return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
+                                 REJECT_INVALID, "invalid-solution");
+            }
+        } else {
+            // Check ProgPow is valid 
+            if (!CheckProgPow(&block, Params())) {
+                LogPrintf("CheckBlockHeader(): ProgPow invalid at height %d\n", block.nHeight);
+                return state.DoS(100, error("CheckBlockHeader(): ProgPow invalid"),
+                                 REJECT_INVALID, "invalid-progpow");
+            }
+        }
     }
 
     // Check proof of work matches claimed amount

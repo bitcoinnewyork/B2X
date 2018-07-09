@@ -103,10 +103,17 @@ public:
         consensus.BTGPremineEnforceWhitelist = true;
         consensus.BitcoinPostforkBlock = uint256S("00000000000000000030f8fb69f0b0f4be375ad7177e54250750cf5abc4a0442");
         consensus.BitcoinPostforkTime = 1510950958;
+        
+        //progpow fork
+        consensus.ProgForkHeight = 522120; // Around 07/7/2018 12:00 UTC
+        consensus.ProgPostforkBlock = uint256S("000004853362fb6250239995594ad39ac6696c5094e332a8e793bfbc4a2f1d46");
+        consensus.ProgPostforkTime = 1531086099;
+
         consensus.powLimit = uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.powLimitStart = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.powLimitProgStart = uint256S("000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.powLimitLegacy = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        
+
         //based on https://github.com/BTCGPU/BTCGPU/issues/78
         consensus.nPowAveragingWindow = 30;
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
