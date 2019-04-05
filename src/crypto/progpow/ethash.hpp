@@ -139,12 +139,35 @@ uint64_t verify_seed(const hash256& header_hash, uint64_t nonce) noexcept;
 bool verify_progpow(const epoch_context& context, const hash256& header_hash, const hash256& mix_hash,
     uint64_t nonce, const hash256& boundary) noexcept;
 
-uint64_t progpow_search_light(const epoch_context& context, const hash256& header_hash,
-    const hash256& boundary, uint64_t start_nonce, size_t iterations) noexcept;
-
 RetVal check_progpow_nonce_light(const epoch_context& context, const hash256& header_hash,
     const hash256& boundary, uint64_t nonce) noexcept;
+
 /////////////////////
+result progpow_2(const epoch_context& context, const hash256& header_hash, uint64_t nonce) noexcept;
+
+result progpow_2(const epoch_context_full& context, const hash256& header_hash, uint64_t nonce) noexcept;
+
+bool verify_final_progpow_2(const hash256& header_hash, const hash256& mix_hash, uint64_t nonce,
+    const hash256& boundary) noexcept;
+
+ethash_hash256 verify_final_progpow_hash_2(const hash256& header_hash, const hash256& mix_hash, uint64_t nonce) noexcept;
+
+bool verify_progpow_2(const epoch_context& context, const hash256& header_hash, const hash256& mix_hash,
+    uint64_t nonce, const hash256& boundary) noexcept;
+
+//---API-------------
+// based on context, header hash and nonce and calculate hash and mix hash
+result progpow_entry(const epoch_context& context, const hash256& header_hash, uint64_t nonce, int height) noexcept;
+
+bool verify_progpow_entry(const epoch_context& context, const hash256& header_hash,
+            const hash256& mix_hash, uint64_t nonce, const hash256& boundary, int height) noexcept;
+
+//based on header hash, mix hash and nonce, calculate the hash.
+ethash_hash256 verify_final_progpow_hash_entry(const hash256& header_hash, const hash256& mix_hash, uint64_t nonce, int height) noexcept;
+
+bool verify_final_progpow_entry(const hash256& header_hash, const hash256& mix_hash, uint64_t nonce,
+    const hash256& boundary, int height) noexcept;
+///////////////
 
 uint64_t search_light(const epoch_context& context, const hash256& header_hash,
     const hash256& boundary, uint64_t start_nonce, size_t iterations) noexcept;

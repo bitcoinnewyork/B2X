@@ -43,6 +43,8 @@ if ENABLE_WALLET
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
+PROGPOW_LIBS = progpow_lib.a
+
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
@@ -181,6 +183,7 @@ libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 # server: shared between bitcoind and bitcoin-qt
 libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_server_a_LIBADD = 
 libbitcoin_server_a_SOURCES = \
   addrdb.cpp \
   addrman.cpp \
@@ -268,23 +271,7 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h \
-  crypto/progpow/ethash.cpp \
-  crypto/progpow/ethash.hpp\
-  crypto/progpow/keccak.c \
-  crypto/progpow/keccak.hpp \
-  crypto/progpow/primes.h \
-  crypto/progpow/endianness.hpp \
-  crypto/progpow/ethash-internal.hpp \
-  crypto/progpow/keccakf1600.c \
-  crypto/progpow/managed.cpp \
-  crypto/progpow/hash_types.h \
-  crypto/progpow/keccakf800.c \
-  crypto/progpow/math_ops.hpp \
-  crypto/progpow/ethash.h \
-  crypto/progpow/hash_types.hpp \
-  crypto/progpow/keccak.h \
-  crypto/progpow/primes.c
+  crypto/sha512.h 
 
 if EXPERIMENTAL_ASM
 crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
@@ -327,6 +314,7 @@ libbitcoin_consensus_a_SOURCES = \
 # common: shared between bitcoind, and bitcoin-qt and non-server tools
 libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libbitcoin_common_a_LIBADD = 
 libbitcoin_common_a_SOURCES = \
   base58.cpp \
   chainparams.cpp \
@@ -409,7 +397,7 @@ btc2d_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-btc2d_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(LIBEQUIHASH_LIBS)
+btc2d_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(LIBEQUIHASH_LIBS) $(PROGPOW_LIBS)
 
 # bitcoin-cli binary #
 btc2_cli_SOURCES = bitcoin-cli.cpp
@@ -430,7 +418,7 @@ btc2_cli_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO)
 
-btc2_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS) $(LIBEQUIHASH_LIBS)
+btc2_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS) $(LIBEQUIHASH_LIBS) $(PROGPOW_LIBS)
 #
 
 # bitcoin-tx binary #
@@ -452,7 +440,7 @@ bitcoin_tx_LDADD = \
   $(LIBSECP256K1) \
   $(LIBEQUIHASH_LIBS)
 
-bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(PROGPOW_LIBS)
 #
 
 # bitcoinconsensus library #

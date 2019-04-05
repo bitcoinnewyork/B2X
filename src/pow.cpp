@@ -187,17 +187,17 @@ bool CheckProgPow (const CBlockHeader *pblock, const CChainParams& params)
           nonce);
 
     //ethash::progpow
-    ethash::result ret = ethash::progpow(epoch_ctx, header_hash, nonce);
+    ethash::result ret = ethash::progpow_entry(epoch_ctx, header_hash, nonce, pblock->nHeight);
     uint256 final_hash, mix_hash;
 
     memcpy(final_hash.begin(), ret.final_hash.bytes, 32);
     memcpy(mix_hash.begin(), ret.mix_hash.bytes, 32);
-    error("progpow hash results. final_hash %s, mix_hash %s\n",
+    error("progpow final_hash %s, mix_hash %s\n",
           final_hash.GetHex().c_str(), mix_hash.GetHex().c_str());
 #endif 
 
-    if (ethash::verify_progpow(epoch_ctx, header_hash,
-                               mix, nonce, target)) {
+    if (ethash::verify_progpow_entry(epoch_ctx, header_hash,
+                               mix, nonce, target, pblock->nHeight)) {
         return true;
     } else {
         return error("CheckProgPow(): invalid nonce");
@@ -241,8 +241,9 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, bool postfork, const Con
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
 
     // Check range
-    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.PowLimit(postfork))) 
+    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.PowLimit(postfork))) {
         return false;
+    }
 
     // Check proof of work matches claimed amount
     if (UintToArith256(hash) > bnTarget) {

@@ -63,6 +63,10 @@ struct Params {
     uint256 ProgPostforkBlock;
     uint32_t ProgPostforkTime;
 
+    int ProgPow2ndForkHeight;
+    uint256 ProgPow2ndPostforkBlock;
+    uint32_t ProgPow2ndPostforkTime;
+
     /**
      * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.
