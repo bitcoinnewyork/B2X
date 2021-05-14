@@ -1,4 +1,4 @@
-# Bitcoin NewYork (B2X) Green and Scaled Bitcoin
+# Bitcoin NewYork (B2X) - Green and Scaled Bitcoin
 
 Bitcoin NewYork (codename BitcoinNewYork) is a fork of the Bitcoin blockchain that will occur at block height 494784, at roughly 12:00:00 UTC November 16, 2017.
 
