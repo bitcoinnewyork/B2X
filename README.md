@@ -19,5 +19,5 @@ The details will be publiced when mainnetworks online.
 ## Links
 
 * Website: https://bitcoinnewyork.org
-* Twitter： @bitcoinNYA
-* Medium: https://bitcoinnewyork.medium.com/
+* Twitter：https://twitter.com/bitcoinnya
+* Medium:  https://bitcoinnewyork.medium.com/
