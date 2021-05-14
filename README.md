@@ -9,7 +9,7 @@ The project carries on the New York Consensus (segwit+2M) from bitcoin community
 5.1 billion USD monthly on chain transaction volume
 20.5 million bitcoin wallets
 
-full details: https://dcgco.medium.com/bitcoin-scaling-agreement-at-consensus-2017-133521fe9a77
+Full details about Bitcon New York Consensus : https://dcgco.medium.com/bitcoin-scaling-agreement-at-consensus-2017-133521fe9a77
 
 At the predetermined block height, BitcoinNewYork miners will begin creating blocks with a new proof-of-work algorithm, and this will cause a bifurcation of the Bitcoin blockchain. The original Bitcoin blockchain will continue on unaltered, but a new branch of the blockchain will split off from the original chain. The new branch is a distinct blockchain with the same transaction history as Bitcoin up until the fork, but then diverges from it. As a result of this process, a new cryptocurrency will be born.
 
