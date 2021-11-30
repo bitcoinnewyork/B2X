@@ -212,6 +212,7 @@ libbitcoin_server_a_SOURCES = \
   rpc/net.cpp \
   rpc/rawtransaction.cpp \
   rpc/server.cpp \
+  rpc/poc.cpp \
   script/sigcache.cpp \
   script/ismine.cpp \
   timedata.cpp \
@@ -222,6 +223,9 @@ libbitcoin_server_a_SOURCES = \
   validation.cpp \
   validationinterface.cpp \
   versionbits.cpp \
+  assember.cpp \
+  actiondb.cpp \
+  blockcache.cpp \
   $(BITCOIN_CORE_H)
 
 if ENABLE_ZMQ
@@ -251,6 +255,7 @@ libbitcoin_wallet_a_SOURCES = \
 # crypto primitives library
 crypto_libbitcoin_crypto_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS) $(BITCOIN_CONFIG_INCLUDES)
 crypto_libbitcoin_crypto_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(PIC_FLAGS)
+crypto_libbitcoin_crypto_base_a_CFLAGS = -fPIC
 crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/aes.cpp \
   crypto/aes.h \
@@ -271,7 +276,10 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h 
+  crypto/sha512.h \
+  crypto/siphash.cpp \
+  crypto/siphash.h \
+  crypto/shabal.c 
 
 if EXPERIMENTAL_ASM
 crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
@@ -294,6 +302,7 @@ libbitcoin_consensus_a_SOURCES = \
   primitives/block.h \
   primitives/transaction.cpp \
   primitives/transaction.h \
+  ticket.cpp \
   pubkey.cpp \
   pubkey.h \
   script/bitcoinconsensus.cpp \
@@ -330,6 +339,7 @@ libbitcoin_common_a_SOURCES = \
   primitives/block.cpp \
   protocol.cpp \
   scheduler.cpp \
+  poc.cpp \
   script/sign.cpp \
   script/standard.cpp \
   warnings.cpp \
@@ -438,7 +448,12 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_CONSENSUS) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1) \
-  $(LIBEQUIHASH_LIBS)
+  $(LIBEQUIHASH_LIBS) \
+  $(LIBBITCOIN_SERVER) \
+  $(LIBLEVELDB) \
+  $(LIBLEVELDB_SSE42) \
+  $(LIBMEMENV)
+
 
 bitcoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(PROGPOW_LIBS)
 #
@@ -454,7 +469,7 @@ endif
 
 libbitcoinconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libbitcoinconsensus_la_LIBADD = $(LIBSECP256K1) $(BOOST_LIBS) $(LIBEQUIHASH_LIBS)
-libbitcoinconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL -DNO_UTIL_LOG
+libbitcoinconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -I$(srcdir)/leveldb/include -DBUILD_BITCOIN_INTERNAL -DNO_UTIL_LOG
 libbitcoinconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif

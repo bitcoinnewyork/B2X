@@ -21,6 +21,8 @@
  */
 static const int64_t MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60;
 
+static constexpr int64_t MAX_FUTURE_BLOCK_TIME_HD = 15;
+
 /**
  * Timestamp window used as a grace period by code that compares external
  * timestamps (such as timestamps passed to RPCs, or wallet key creation times)
@@ -28,6 +30,8 @@ static const int64_t MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60;
  * MAX_FUTURE_BLOCK_TIME.
  */
 static const int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME;
+
+static constexpr uint64_t CUMULATIVE_DIFF_DENOM = 18446744073709551615U;
 
 class CBlockFileInfo
 {
@@ -370,6 +374,223 @@ public:
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
 };
+
+class CBlockIndexHD
+{
+public:
+    //! pointer to the hash of the block, if any. Memory is owned by this CBlockIndex
+    const uint256* phashBlock;
+
+    //! pointer to the index of the predecessor of this block
+    CBlockIndex* pprev;
+
+    //! pointer to the index of some further predecessor of this block
+    CBlockIndex* pskip;
+
+    //! height of the entry in the chain. The genesis block has height 0
+    int nHeight;
+
+    //! Which # file this block is stored in (blk?????.dat)
+    int nFile;
+
+    //! Byte offset within blk?????.dat where this block's data is stored
+    unsigned int nDataPos;
+
+    //! Byte offset within rev?????.dat where this block's undo data is stored
+    unsigned int nUndoPos;
+   //! (memory only) Total amount of work (expected number of hashes) in the chain up to and including this block
+    arith_uint256 nCumulativeDiff;
+
+    //! Number of transactions in this block.
+    //! Note: in a potential headers-first mode, this number cannot be relied upon
+    unsigned int nTx;
+
+    //! (memory only) Number of transactions in the chain up to and including this block.
+    //! This value will be non-zero only if and only if transactions for this block and all its parents are available.
+    //! Change to 64-bit type when necessary; won't happen before 2030
+    unsigned int nChainTx;
+
+    //! Verification status of this block. See enum BlockStatus
+    uint32_t nStatus;
+
+    //! block header
+    int32_t nVersion;
+    uint256 hashMerkleRoot;
+    uint32_t nTime;
+    uint64_t nNonce;
+   //! block header poc
+    uint256 genSign;
+    uint64_t nPlotID;
+    uint64_t nBaseTarget;
+    uint64_t nDeadline;
+
+    //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
+    int32_t nSequenceId;
+
+    //! (memory only) Maximum nTime in the chain up to and including this block.
+    unsigned int nTimeMax;
+
+    void SetNull()
+    {
+        phashBlock = nullptr;
+        pprev = nullptr;
+        pskip = nullptr;
+        nHeight = 0;
+        nFile = 0;
+        nDataPos = 0;
+        nUndoPos = 0;
+        nCumulativeDiff = arith_uint256();
+        nTx = 0;
+        nChainTx = 0;
+        nStatus = 0;
+        nSequenceId = 0;
+        nTimeMax = 0;
+
+        nVersion       = 0;
+        hashMerkleRoot = uint256();
+        nTime          = 0;
+        nNonce         = 0;
+
+        nPlotID        = 0;
+        genSign.SetNull();
+        nBaseTarget    = 0;
+        nDeadline      = 0;
+    }
+
+    CBlockIndex()
+    {
+        SetNull();
+    }
+
+    explicit CBlockIndex(const CBlockHeader& block)
+    {
+        SetNull();
+
+        nVersion       = block.nVersion;
+        hashMerkleRoot = block.hashMerkleRoot;
+        nTime          = block.nTime;
+        nNonce         = block.nNonce;
+
+        nPlotID        = block.nPlotID;
+        genSign        = block.genSign;
+        nBaseTarget    = block.nBaseTarget;
+        nDeadline      = block.nDeadline;
+    }
+
+    CDiskBlockPos GetBlockPos() const {
+        CDiskBlockPos ret;
+        if (nStatus & BLOCK_HAVE_DATA) {
+            ret.nFile = nFile;
+            ret.nPos  = nDataPos;
+        }
+        return ret;
+    }
+
+    CDiskBlockPos GetUndoPos() const {
+        CDiskBlockPos ret;
+        if (nStatus & BLOCK_HAVE_UNDO) {
+            ret.nFile = nFile;
+            ret.nPos  = nUndoPos;
+        }
+        return ret;
+    }
+
+    CBlockHeader GetBlockHeader() const
+    {
+        CBlockHeader block;
+        block.nVersion       = nVersion;
+        if (pprev)
+            block.hashPrevBlock = pprev->GetBlockHash();
+        block.hashMerkleRoot = hashMerkleRoot;
+        block.nTime          = nTime;
+        block.nNonce         = nNonce;
+       block.nBaseTarget    = nBaseTarget;
+        block.genSign        = genSign;
+        block.nPlotID        = nPlotID;
+        block.nDeadline      = nDeadline;
+        return block;
+    }
+
+    uint256 GetBlockHash() const
+    {
+        return *phashBlock;
+    }
+
+    /**
+     * Check whether this block's and all previous blocks' transactions have been
+     * downloaded (and stored to disk) at some point.
+     *
+     * Does not imply the transactions are consensus-valid (ConnectTip might fail)
+     * Does not imply the transactions are still stored on disk. (IsBlockPruned might return true)
+     */
+    bool HaveTxsDownloaded() const { return nChainTx != 0; }
+
+    int64_t GetBlockTime() const
+    {
+        return (int64_t)nTime;
+    }
+
+
+    int64_t GetBlockTimeMax() const
+    {
+        return (int64_t)nTimeMax;
+    }
+
+    static constexpr int nMedianTimeSpan = 21;
+
+    int64_t GetMedianTimePast() const
+    {
+        int64_t pmedian[nMedianTimeSpan];
+        int64_t* pbegin = &pmedian[nMedianTimeSpan];
+        int64_t* pend = &pmedian[nMedianTimeSpan];
+
+        const CBlockIndex* pindex = this;
+        for (int i = 0; i < nMedianTimeSpan && pindex; i++, pindex = pindex->pprev)
+            *(--pbegin) = pindex->GetBlockTime();
+
+        std::sort(pbegin, pend);
+        return pbegin[(pend - pbegin)/2];
+    }
+
+    std::string ToString() const
+    {
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+            pprev, nHeight,
+            hashMerkleRoot.ToString(),
+            GetBlockHash().ToString());
+    }
+
+    //! Check whether this block index entry is valid up to the passed validity level.
+    bool IsValid(enum BlockStatus nUpTo = BLOCK_VALID_TRANSACTIONS) const
+    {
+        assert(!(nUpTo & ~BLOCK_VALID_MASK)); // Only validity flags allowed.
+        if (nStatus & BLOCK_FAILED_MASK)
+            return false;
+        return ((nStatus & BLOCK_VALID_MASK) >= nUpTo);
+    }
+
+    //! Raise the validity level of this block index entry.
+    //! Returns true if the validity was changed.
+    bool RaiseValidity(enum BlockStatus nUpTo)
+    {
+        assert(!(nUpTo & ~BLOCK_VALID_MASK)); // Only validity flags allowed.
+        if (nStatus & BLOCK_FAILED_MASK)
+            return false;
+        if ((nStatus & BLOCK_VALID_MASK) < nUpTo) {
+            nStatus = (nStatus & ~BLOCK_VALID_MASK) | nUpTo;
+            return true;
+        }
+        return false;
+    }
+    //! Build the skiplist pointer for this entry.
+    void BuildSkip();
+
+    //! Efficiently find an ancestor of this block.
+    CBlockIndex* GetAncestor(int height);
+    const CBlockIndex* GetAncestor(int height) const;
+};
+
+
 
 arith_uint256 GetBlockProof(const CBlockIndex& block);
 /** Return the time it would take to redo the work difference between from and to, assuming the current hashrate corresponds to the difficulty at tip, in seconds. */

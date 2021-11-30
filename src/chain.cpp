@@ -132,6 +132,23 @@ arith_uint256 GetBlockProof(const CBlockIndex& block)
     return (~bnTarget / (bnTarget + 1)) + 1;
 }
 
+arith_uint256 GetBlockProofHD(const CBlockIndex& block)
+{
+    uint64_t bnTarget = CUMULATIVE_DIFF_DENOM / block.nBaseTarget;
+
+    /*bool fNegative;
+    bool fOverflow;
+    bnTarget.SetCompact(block.nBaseTarget, &fNegative, &fOverflow);
+    if (fNegative || fOverflow || bnTarget == 0)
+        return 0;*/
+    // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256
+    // as it's too large for an arith_uint256. However, as 2**256 is at least as large
+    // as bnTarget+1, it is equal to ((2**256 - bnTarget - 1) / (bnTarget+1)) + 1,
+    // or ~bnTarget / (bnTarget+1) + 1.
+    return *new arith_uint256(bnTarget);
+}
+
+
 int64_t GetBlockProofEquivalentTime(const CBlockIndex& to, const CBlockIndex& from, const CBlockIndex& tip, const Consensus::Params& params)
 {
     arith_uint256 r;
@@ -142,12 +159,31 @@ int64_t GetBlockProofEquivalentTime(const CBlockIndex& to, const CBlockIndex& fr
         r = from.nChainWork - to.nChainWork;
         sign = -1;
     }
+
     r = r * arith_uint256(params.nPowTargetSpacing) / GetBlockProof(tip);
     if (r.bits() > 63) {
         return sign * std::numeric_limits<int64_t>::max();
     }
     return sign * r.GetLow64();
 }
+
+int64_t GetBlockProofEquivalentTimeHD(const CBlockIndex& to, const CBlockIndex& from, const CBlockIndex& tip, const Consensus::Params& params)
+{
+    arith_uint256 r;
+    int sign = 1;
+    if (to.nCumulativeDiff > from.nCumulativeDiff) {
+        r = to.nCumulativeDiff - from.nCumulativeDiff;
+    } else {
+        r = from.nCumulativeDiff - to.nCumulativeDiff;
+        sign = -1;
+    }
+    r = r * arith_uint256(params.nPowTargetSpacing) / GetBlockProofHD(tip);
+    if (r.bits() > 63) {
+        return sign * std::numeric_limits<int64_t>::max();
+    }
+    return sign * r.GetLow64();
+}
+
 
 /** Find the last common ancestor two blocks have.
  *  Both pa and pb must be non-nullptr. */
