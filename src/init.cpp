@@ -900,6 +900,12 @@ bool AppInitParameterInteraction()
             return InitError(_("Prune mode is incompatible with -txindex."));
     }
 
+   // if using block pruning for HD, then disallow txindex
+    if (gArgs.GetArg("-prune", 0)) {
+        return InitError(_("Prune mode is incompatible with -txindex."));
+    }
+
+
     // -bind and -whitebind can't be set when not listening
     size_t nUserBind = gArgs.GetArgs("-bind").size() + gArgs.GetArgs("-whitebind").size();
     if (nUserBind != 0 && !gArgs.GetBoolArg("-listen", DEFAULT_LISTEN)) {
@@ -974,6 +980,22 @@ bool AppInitParameterInteraction()
     }
     fCheckBlockIndex = gArgs.GetBoolArg("-checkblockindex", chainparams.DefaultConsistencyChecks());
     fCheckpointsEnabled = gArgs.GetBoolArg("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
+
+    // HD
+    if (gArgs.IsArgSet("-minimumcumulativediff")) {
+        const std::string minCumulativeDiffStr = gArgs.GetArg("-minimumcumulativediff", "");
+        if (!IsHexNumber(minCumulativeDiffStr)) {
+            return InitError(strprintf("Invalid non-hex (%s) minimum chain work value specified", minCumulativeDiffStr));
+        }
+        nMinimumCumulativeDiff = UintToArith256(uint256S(minCumulativeDiffStr));
+    } else {
+        nMinimumCumulativeDiff = UintToArith256(chainparams.GetConsensus().nMinimumCumulativeDiff);
+    }
+    LogPrintf("Setting nMinimumCumulativeDiff=%s\n", nMinimumCumulativeDiff.GetHex());
+    if (nMinimumCumulativeDiff < UintToArith256(chainparams.GetConsensus().nMinimumCumulativeDiff)) {
+        LogPrintf("Warning: nMinimumCumulativeDiff set below default value of %s\n", chainparams.GetConsensus().nMinimumCumulativeDiff.GetHex());
+    }
+
 
     hashAssumeValid = uint256S(gArgs.GetArg("-assumevalid", chainparams.GetConsensus().defaultAssumeValid.GetHex()));
     if (!hashAssumeValid.IsNull())
@@ -1394,6 +1416,11 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("* Using %.1fMiB for chain state database\n", nCoinDBCache * (1.0 / 1024 / 1024));
     LogPrintf("* Using %.1fMiB for in-memory UTXO set (plus up to %.1fMiB of unused mempool space)\n", nCoinCacheUsage * (1.0 / 1024 / 1024), nMempoolSizeMax * (1.0 / 1024 / 1024));
 
+    // HD
+    prelationview.reset(new CRelationView(0));
+    pticketview.reset(new CTicketView(0));
+    g_blockCache.reset(new CBlockCache());
+
     bool fLoaded = false;
     while (!fLoaded && !fRequestShutdown) {
         bool fReset = fReindex;
@@ -1526,6 +1553,19 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                         break;
                     }
                 }
+
+	       // HD , Load ticket from disk
+                if (!LoadTicketView()) {
+                    strLoadError = _("Error opening ticket database");
+                    break;
+                }
+
+                // Load relation from disk
+                if (!LoadRelationView()) {
+                    strLoadError = _("Error opening relation database");
+                    break;
+                }
+
             } catch (const std::exception& e) {
                 LogPrintf("%s\n", e.what());
                 strLoadError = _("Error opening block database");
@@ -1711,6 +1751,10 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         pwallet->postInitProcess(scheduler);
     }
 #endif
+
+    // HD 
+    scheduler.scheduleEvery([] {blockAssember.CheckDeadline(); }, 200);
+    scheduler.scheduleEvery([] {g_blockCache->PushBlock(); }, 200);
 
     return !fRequestShutdown;
 }

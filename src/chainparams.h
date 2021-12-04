@@ -88,6 +88,10 @@ public:
     std::string GetFoundersRewardAddressAtHeight(int height) const;
     CScript GetFoundersRewardScriptAtHeight(int height) const;
     std::string GetFoundersRewardAddressAtIndex(int i) const;
+    /* from HD */
+    const uint64_t TargetDeadline() { return 60 * 60 * 24; }
+    const uint32_t SlotLength() const { return nSlotLength; }
+
 protected:
     CChainParams() {}
 
@@ -111,6 +115,9 @@ protected:
     ChainTxData chainTxData;
     std::vector<std::vector<std::string> > vPreminePubkeys;
     std::vector<std::string> vFoundersRewardAddress;
+
+    /* for HD */
+    int32_t nSlotLength;
 };
 
 /**

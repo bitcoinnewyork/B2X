@@ -67,6 +67,11 @@ struct Params {
     uint256 ProgPow2ndPostforkBlock;
     uint32_t ProgPow2ndPostforkTime;
 
+    /* HD fork */
+    int HDForkHeight;
+    uint256 HDPostforkBlock;
+    uint32_t HDPostforkTime;
+
     /**
      * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.
@@ -88,8 +93,12 @@ struct Params {
     int64_t nPowTargetTimespanLegacy;
     int64_t DifficultyAdjustmentInterval() const { return nPowTargetTimespanLegacy / nPowTargetSpacing; }
     uint256 nMinimumChainWork;
+
+    //HD
+    uint256 nMinimumCumulativeDiff;
     uint256 defaultAssumeValid;
-    
+    CAmount nActionFee;
+ 
     //Zcash logic for diff adjustment
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;

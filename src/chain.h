@@ -671,6 +671,78 @@ public:
     }
 };
 
+/** Used to marshal pointers into hashes for db storage. */
+class CDiskBlockIndex : public CBlockIndexHD
+{
+public:
+    uint256 hashPrev;
+
+    CDiskBlockIndex() {
+        hashPrev = uint256();
+    }
+
+    explicit CDiskBlockIndex(const CBlockIndex* pindex) : CBlockIndex(*pindex) {
+        hashPrev = (pprev ? pprev->GetBlockHash() : uint256());
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        int _nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH))
+            READWRITE(VARINT(_nVersion, VarIntMode::NONNEGATIVE_SIGNED));
+
+        READWRITE(VARINT(nHeight, VarIntMode::NONNEGATIVE_SIGNED));
+        READWRITE(VARINT(nStatus));
+        READWRITE(VARINT(nTx));
+       if (nStatus & (BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO))
+            READWRITE(VARINT(nFile, VarIntMode::NONNEGATIVE_SIGNED));
+        if (nStatus & BLOCK_HAVE_DATA)
+            READWRITE(VARINT(nDataPos));
+        if (nStatus & BLOCK_HAVE_UNDO)
+            READWRITE(VARINT(nUndoPos));
+
+        // block header
+        READWRITE(this->nVersion);
+        READWRITE(hashPrev);
+        READWRITE(hashMerkleRoot);
+        READWRITE(nTime);
+        READWRITE(nNonce);
+        READWRITE(genSign);
+        READWRITE(nDeadline);
+        READWRITE(nPlotID);
+        READWRITE(nBaseTarget);
+    }
+
+    uint256 GetBlockHash() const
+    {
+        CBlockHeader block;
+        block.nVersion        = nVersion;
+        block.hashPrevBlock   = hashPrev;
+        block.hashMerkleRoot  = hashMerkleRoot;
+        block.nTime           = nTime;
+        block.nNonce          = nNonce;
+        block.genSign         = genSign;
+        block.nDeadline       = nDeadline;
+        block.nPlotID         = nPlotID;
+        block.nBaseTarget     = nBaseTarget;
+        return block.GetHash();
+    }
+
+
+    std::string ToString() const
+    {
+        std::string str = "CDiskBlockIndex(";
+        str += CBlockIndex::ToString();
+        str += strprintf("\n                hashBlock=%s, hashPrev=%s)",
+            GetBlockHash().ToString(),
+            hashPrev.ToString());
+        return str;
+    }
+};
+
+
 /** An in-memory indexed chain of blocks. */
 class CChain {
 private:
