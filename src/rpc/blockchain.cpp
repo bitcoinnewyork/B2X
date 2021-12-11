@@ -98,6 +98,16 @@ double GetDifficultyBitcoin(const CBlockIndex* blockindex)
     return dDiff;
 }
 
+// For HD only
+double GetDifficultyHD(const CBlockIndex* blockindex)
+{
+    assert(blockindex);
+
+        double netdiff = double(18325193796) / double(blockindex->GetBlockHeader().nBaseTarget);
+    return netdiff;
+}
+
+
 double GetDifficulty(const CBlockIndex* blockindex)
 {
     if (blockindex == nullptr)
@@ -148,6 +158,33 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     return result;
 }
 
+UniValue blockheaderToJSONHD(const CBlockIndex* tip, const CBlockIndex* blockindex)
+{
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("hash", blockindex->GetBlockHash().GetHex());
+    const CBlockIndex* pnext;
+    int confirmations = ComputeNextBlockAndDepth(tip, blockindex, pnext);
+    result.pushKV("confirmations", confirmations);
+    result.pushKV("height", blockindex->nHeight);
+    result.pushKV("version", blockindex->nVersion);
+    result.pushKV("versionHex", strprintf("%08x", blockindex->nVersion));
+    result.pushKV("merkleroot", blockindex->hashMerkleRoot.GetHex());
+    result.pushKV("time", (int64_t)blockindex->nTime);
+    result.pushKV("mediantime", (int64_t)blockindex->GetMedianTimePast());
+    result.pushKV("nonce", (uint64_t)blockindex->nNonce);
+    //result.pushKV("bits", strprintf("%08x", blockindex->nBits));
+    result.pushKV("difficulty", GetDifficulty(blockindex));
+    result.pushKV("cumulativeDiff", blockindex->nCumulativeDiff.GetHex());
+    result.pushKV("nTx", (uint64_t)blockindex->nTx);
+
+    if (blockindex->pprev)
+        result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
+    if (pnext)
+        result.pushKV("nextblockhash", pnext->GetBlockHash().GetHex());
+    return result;
+}
+
+
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails)
 {
     UniValue result(UniValue::VOBJ);
@@ -197,6 +234,56 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
         result.push_back(Pair("nextblockhash", pnext->GetBlockHash().GetHex()));
     return result;
 }
+
+UniValue blockToJSONHD(const CBlock& block, const CBlockIndex* tip, const CBlockIndex* blockindex, bool txDetails)
+{
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("hash", blockindex->GetBlockHash().GetHex());
+    const CBlockIndex* pnext;
+    int confirmations = ComputeNextBlockAndDepth(tip, blockindex, pnext);
+    uint64_t baseTarget = blockindex->pprev ? blockindex->pprev->nBaseTarget : block.nBaseTarget;
+
+    result.pushKV("confirmations", confirmations);
+    result.pushKV("strippedsize", (int)::GetSerializeSize(block, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS));
+    result.pushKV("size", (int)::GetSerializeSize(block, PROTOCOL_VERSION));
+    result.pushKV("weight", (int)::GetBlockWeight(block));
+    result.pushKV("height", blockindex->nHeight);
+    result.pushKV("version", block.nVersion);
+    result.pushKV("versionHex", strprintf("%08x", block.nVersion));
+    result.pushKV("merkleroot", block.hashMerkleRoot.GetHex());
+    UniValue txs(UniValue::VARR);
+    for(const auto& tx : block.vtx)
+    {
+        if(txDetails)
+        {
+            UniValue objTx(UniValue::VOBJ);
+            TxToUniv(*tx, uint256(), objTx, true, RPCSerializationFlags());
+            txs.push_back(objTx);
+        }
+        else
+            txs.push_back(tx->GetHash().GetHex());
+    }
+    result.pushKV("tx", txs);
+    result.pushKV("time", block.GetBlockTime());
+    result.pushKV("mediantime", (int64_t)blockindex->GetMedianTimePast());
+    result.pushKV("nonce", (uint64_t)block.nNonce);
+    //result.pushKV("bits", strprintf("%08x", block.nBits));
+    result.pushKV("difficulty", GetDifficulty(blockindex));
+    result.pushKV("deadline", block.nDeadline/baseTarget);
+    result.pushKV("plotid", block.nPlotID);
+    result.pushKV("generationsignature", block.genSign.ToString());
+    result.pushKV("basetarget", block.nBaseTarget);
+    result.pushKV("cumulativediff", blockindex->nCumulativeDiff.GetHex());
+    result.pushKV("ticketprice", pticketview->CurrentTicketPrice());
+    result.pushKV("nTx", (uint64_t)blockindex->nTx);
+
+    if (blockindex->pprev)
+        result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
+    if (pnext)
+        result.pushKV("nextblockhash", pnext->GetBlockHash().GetHex());
+    return result;
+}
+
 
 UniValue getblockcount(const JSONRPCRequest& request)
 {
@@ -1263,6 +1350,111 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
     }
     return obj;
 }
+
+niValue getblockchaininfoHD(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw std::runtime_error(
+            RPCHelpMan{"getblockchaininfo",
+                "Returns an object containing various state info regarding blockchain processing.\n",
+                {},
+                RPCResult{
+            "{\n"
+            "  \"chain\": \"xxxx\",              (string) current network name as defined in BIP70 (main, test, regtest)\n"
+            "  \"blocks\": xxxxxx,             (numeric) the current number of blocks processed in the server\n"
+            "  \"headers\": xxxxxx,            (numeric) the current number of headers we have validated\n"
+            "  \"bestblockhash\": \"...\",       (string) the hash of the currently best block\n"
+            "  \"difficulty\": xxxxxx,         (numeric) the current difficulty\n"
+            "  \"mediantime\": xxxxxx,         (numeric) median time for the current best block\n"
+            "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
+            "  \"initialblockdownload\": xxxx, (bool) (debug information) estimate of whether this node is in Initial Block Download mode.\n"
+            "  \"chainwork\": \"xxxx\"           (string) total amount of work in active chain, in hexadecimal\n"
+            "  \"size_on_disk\": xxxxxx,       (numeric) the estimated size of the block and undo files on disk\n"
+            "  \"pruned\": xx,                 (boolean) if the blocks are subject to pruning\n"
+            "  \"pruneheight\": xxxxxx,        (numeric) lowest-height complete block stored (only present if pruning is enabled)\n"
+            "  \"automatic_pruning\": xx,      (boolean) whether automatic pruning is enabled (only present if pruning is enabled)\n"
+            "  \"prune_target_size\": xxxxxx,  (numeric) the target size used by pruning (only present if automatic pruning is enabled)\n"
+            "  \"softforks\": [                (array) status of softforks in progress\n"
+            "     {\n"
+            "        \"id\": \"xxxx\",           (string) name of softfork\n"
+            "        \"version\": xx,          (numeric) block version\n"
+            "        \"reject\": {             (object) progress toward rejecting pre-softfork blocks\n"
+            "           \"status\": xx,        (boolean) true if threshold reached\n"
+            "        },\n"
+            "     }, ...\n"
+            "  ],\n"
+            "  \"bip9_softforks\": {           (object) status of BIP9 softforks in progress\n"
+            "     \"xxxx\" : {                 (string) name of the softfork\n"
+            "        \"status\": \"xxxx\",       (string) one of \"defined\", \"started\", \"locked_in\", \"active\", \"failed\"\n"
+            "        \"bit\": xx,              (numeric) the bit (0-28) in the block version field used to signal this softfork (only for \"started\" status)\n"
+            "        \"startTime\": xx,        (numeric) the minimum median time past of a block at which the bit gains its meaning\n"
+            "        \"timeout\": xx,          (numeric) the median time past of a block at which the deployment is considered failed if not yet locked in\n"
+            "        \"since\": xx,            (numeric) height of the first block to which the status applies\n"
+            "        \"statistics\": {         (object) numeric statistics about BIP9 signalling for a softfork (only for \"started\" status)\n"
+            "           \"period\": xx,        (numeric) the length in blocks of the BIP9 signalling period \n"
+            "           \"threshold\": xx,     (numeric) the number of blocks with the version bit set required to activate the feature \n"
+            "           \"elapsed\": xx,       (numeric) the number of blocks elapsed since the beginning of the current period \n"
+            "           \"count\": xx,         (numeric) the number of blocks with the version bit set in the current period \n"
+            "           \"possible\": xx       (boolean) returns false if there are not enough blocks left in this period to pass activation threshold \n"
+            "        }\n"
+           "     }\n"
+            "  }\n"
+            "  \"warnings\" : \"...\",           (string) any network and blockchain warnings.\n"
+            "}\n"
+                },
+                RPCExamples{
+                    HelpExampleCli("getblockchaininfo", "")
+            + HelpExampleRpc("getblockchaininfo", "")
+                },
+            }.ToString());
+
+    LOCK(cs_main);
+
+    const CBlockIndex* tip = chainActive.Tip();
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("chain",                 Params().NetworkIDString());
+    obj.pushKV("blocks",                (int)chainActive.Height());
+    obj.pushKV("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1);
+    obj.pushKV("bestblockhash",         tip->GetBlockHash().GetHex());
+    obj.pushKV("difficulty",                GetDifficulty(tip));
+    obj.pushKV("mediantime",            (int64_t)tip->GetMedianTimePast());
+    obj.pushKV("verificationprogress",  GuessVerificationProgress(Params().TxData(), tip));
+    obj.pushKV("initialblockdownload",  IsInitialBlockDownload());
+    obj.pushKV("cumulativeDiff",        tip->nCumulativeDiff.GetHex());
+    obj.pushKV("size_on_disk",          CalculateCurrentUsage());
+    obj.pushKV("pruned",                fPruneMode);
+    if (fPruneMode) {
+        const CBlockIndex* block = tip;
+        assert(block);
+        while (block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA)) {
+            block = block->pprev;
+        }
+        obj.pushKV("pruneheight",        block->nHeight);
+
+        // if 0, execution bypasses the whole if block.
+        bool automatic_pruning = (gArgs.GetArg("-prune", 0) != 1);
+        obj.pushKV("automatic_pruning",  automatic_pruning);
+        if (automatic_pruning) {
+            obj.pushKV("prune_target_size",  nPruneTarget);
+        }
+    }
+
+    const Consensus::Params& consensusParams = Params().GetConsensus();
+    UniValue softforks(UniValue::VARR);
+    UniValue bip9_softforks(UniValue::VOBJ);
+    softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));
+    softforks.push_back(SoftForkDesc("bip66", 3, tip, consensusParams));
+    softforks.push_back(SoftForkDesc("bip65", 4, tip, consensusParams));
+    for (int pos = Consensus::DEPLOYMENT_CSV; pos != Consensus::MAX_VERSION_BITS_DEPLOYMENTS; ++pos) {
+        BIP9SoftForkDescPushBack(bip9_softforks, consensusParams, static_cast<Consensus::DeploymentPos>(pos));
+    }
+    obj.pushKV("softforks",             softforks);
+    obj.pushKV("bip9_softforks", bip9_softforks);
+
+    obj.pushKV("warnings", GetWarnings("statusbar"));
+    return obj;
+}
+
 
 /** Comparison function for sorting the getchaintips heads.  */
 struct CompareBlocksByHeight

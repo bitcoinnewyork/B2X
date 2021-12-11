@@ -63,6 +63,7 @@ uint256 CBlockHeader::GetHash(const Consensus::Params& params) const
         return getBlockHeaderProgPowHash(this);
     }
 
+
     if (nHeight >= (uint32_t)params.BTGHeight) {
         version = PROTOCOL_VERSION;
     } else {
@@ -82,6 +83,7 @@ uint256 CBlockHeader::GetHash() const
 std::string CBlock::ToString() const
 {
     std::stringstream s;
+    //TODO  s << strprintf("CBlock(hash=%s, ver=0x%08x, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBaseTarget=%u, nNonce=%u, vtx=%u)\n",
     s << strprintf("CBlock(hash=%s, ver=0x%08x, hashPrevBlock=%s, hashMerkleRoot=%s, nHeight=%u, nTime=%u, nBits=%08x, nNonce=%s, vtx=%u)\n",
         GetHash().ToString(),
         nVersion,
@@ -89,6 +91,9 @@ std::string CBlock::ToString() const
         hashMerkleRoot.ToString(),
         nHeight, nTime, nBits, nNonce.GetHex(),
         vtx.size());
+
+    //TODO in the above use 'nBaseTarget' not nBits..
+
     for (const auto& tx : vtx) {
         s << "  " << tx->ToString() << "\n";
     }

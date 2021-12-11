@@ -101,6 +101,72 @@ public:
 };
 
 
+//TODO merge with above??
+class CBlockHeaderHD
+{
+public:
+    // header
+    int32_t nVersion;
+    uint256 hashPrevBlock;
+    uint256 hashMerkleRoot;
+    uint32_t nTime;
+    uint64_t nNonce;
+
+    //poc
+    uint256 genSign;
+    uint64_t nPlotID;
+    uint64_t nBaseTarget;
+    uint64_t nDeadline;
+
+    CBlockHeader()
+    {
+        SetNull();
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(this->nVersion);
+        READWRITE(hashPrevBlock);
+        READWRITE(hashMerkleRoot);
+        READWRITE(nTime);
+       READWRITE(nNonce);
+
+        READWRITE(genSign);
+        READWRITE(nPlotID);
+        READWRITE(nBaseTarget);
+        READWRITE(nDeadline);
+    }
+
+    void SetNull()
+    {
+        nVersion = 0;
+        hashPrevBlock.SetNull();
+        hashMerkleRoot.SetNull();
+        nTime = 0;
+        nNonce = 0;
+
+        genSign.SetNull();
+        nPlotID = 0;
+        nBaseTarget = 0;
+        nDeadline = 0;
+    }
+
+    bool IsNull() const
+    {
+        return (nDeadline == 0 && nBaseTarget == 0);
+    }
+
+    uint256 GetHash() const;
+
+    {
+        return (int64_t)nTime;
+    }
+};
+
+
+
 class CBlock : public CBlockHeader
 {
 public:
@@ -153,6 +219,61 @@ public:
 
     std::string ToString() const;
 };
+
+class CBlock : public CBlockHeaderHD
+{
+public:
+    // network and disk
+    std::vector<CTransactionRef> vtx;
+
+    // memory only
+    mutable bool fChecked;
+
+    CBlock()
+    {
+        SetNull();
+    }
+
+    CBlock(const CBlockHeader &header)
+    {
+        SetNull();
+        *(static_cast<CBlockHeader*>(this)) = header;
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITEAS(CBlockHeader, *this);
+        READWRITE(vtx);
+    }
+
+    void SetNull()
+    {
+        CBlockHeader::SetNull();
+        vtx.clear();
+        fChecked = false;
+    }
+
+    CBlockHeader GetBlockHeader() const
+    {
+        CBlockHeader block;
+        block.nVersion       = nVersion;
+        block.hashPrevBlock  = hashPrevBlock;
+        block.hashMerkleRoot = hashMerkleRoot;
+        block.nTime          = nTime;
+        block.nNonce         = nNonce;
+
+        block.genSign        = genSign;
+        block.nPlotID        = nPlotID;
+        block.nBaseTarget    = nBaseTarget;
+        block.nDeadline      = nDeadline;
+        return block;
+    }
+
+    std::string ToString() const;
+};
+
 
 /**
  * Custom serializer for CBlockHeader that omits the nonce and solution, for use

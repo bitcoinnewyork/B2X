@@ -12,6 +12,10 @@
 #include "serialize.h"
 #include "uint256.h"
 
+//HD
+#include <ticket.h>
+
+
 static const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
 
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
@@ -356,6 +360,11 @@ public:
         }
         return false;
     }
+
+    
+    bool IsTicketTx() const;
+
+    CTicketRef Ticket() const;
 };
 
 /** A mutable version of CTransaction. */

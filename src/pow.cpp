@@ -34,6 +34,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     else if (nHeight < params.BTGHeight + params.BTGPremineWindow + params.nPowAveragingWindow){
         return UintToArith256(params.powLimitStart).GetCompact();
     }
+
+    //TODO while (pindex->pprev && pindex->nHeight % params.DifficultyAdjustmentInterval() != 0 /*&& pindex->nBits == nProofOfWorkLimit*/)
+	
     
     const CBlockIndex* pindexFirst = pindexLast;
     arith_uint256 bnTot {0};
@@ -70,6 +73,7 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg, int64_t nLastBlockTi
     bnNew /= params.AveragingWindowTimespan();
     bnNew *= nActualTimespan;
     
+    //TODO bnNew.SetCompact(pindexLast->nBaseTarget); 
     if (bnNew > bnPowLimit)
         bnNew = bnPowLimit;
 

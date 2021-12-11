@@ -31,8 +31,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "setmocktime", 0, "timestamp" },
     { "generate", 0, "nblocks" },
     { "generate", 1, "maxtries" },
-    { "generatetoaddress", 0, "nblocks" },
-    { "generatetoaddress", 2, "maxtries" },
+    { "generatetoaddress", 0, "nblocks" },  // TODO HD delete 
+    { "generatetoaddress", 2, "maxtries" }, // TODO HD Delete
     { "getnetworkhashps", 0, "nblocks" },
     { "getnetworkhashps", 1, "height" },
     { "getblocksubsidy", 0, "height" },
@@ -66,7 +66,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "listaccounts", 0, "minconf" },
     { "listaccounts", 1, "include_watchonly" },
     { "walletpassphrase", 1, "timeout" },
-    { "getblocktemplate", 0, "template_request" },
+    { "getblocktemplate", 0, "template_request" },  //TODO HD Delete
     { "listsinceblock", 1, "target_confirmations" },
     { "listsinceblock", 2, "include_watchonly" },
     { "listsinceblock", 3, "include_removed" },
@@ -99,7 +99,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "signrawtransaction", 1, "prevtxs" },
     { "signrawtransaction", 2, "privkeys" },
     { "sendrawtransaction", 1, "allowhighfees" },
-    { "combinerawtransaction", 0, "txs" },
+    { "combinerawtransaction", 0, "txs" }, //HD todo delete
     { "fundrawtransaction", 1, "options" },
     { "gettxout", 1, "n" },
     { "gettxout", 2, "include_mempool" },
@@ -121,8 +121,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "estimatesmartfee", 0, "nblocks" },
     { "estimaterawfee", 0, "nblocks" },
     { "estimaterawfee", 1, "threshold" },
-    { "prioritisetransaction", 1, "dummy" },
-    { "prioritisetransaction", 2, "fee_delta" },
+    { "prioritisetransaction", 1, "dummy" }, //HD todo delete
+    { "prioritisetransaction", 2, "fee_delta" }, //HD todo delete
     { "setban", 2, "bantime" },
     { "setban", 3, "absolute" },
     { "setnetworkactive", 0, "state" },
@@ -143,6 +143,18 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "echojson", 7, "arg7" },
     { "echojson", 8, "arg8" },
     { "echojson", 9, "arg9" },
+    // HD added
+    { "rescanblockchain", 0, "start_height"},
+    { "rescanblockchain", 1, "stop_height"},
+    { "createwallet", 1, "disable_private_keys"},
+    { "createwallet", 2, "blank"},
+    { "getnodeaddresses", 0, "count"},
+    { "stop", 0, "wait" },
+    { "getmineraddress", 0, "new" },
+    { "listslotfs", 0, "index" },
+    { "listslotfs", 1, "all" },
+    { "getfirestone", 1, "all" },
+    { "getslotinfo", 0, "index" },
 };
 
 class CRPCConvertTable
