@@ -30,6 +30,8 @@
 
 #include <atomic>
 
+#include <actiondb.h>
+
 class CBlockIndex;
 class CBlockTreeDB;
 class CChainParams;
@@ -185,6 +187,13 @@ extern bool fEnableReplacement;
 
 /** Block hash whose ancestors we will assume to have valid scripts without checking them. */
 extern uint256 hashAssumeValid;
+
+
+/** Minimum work we will assume exists on some valid chain. */
+extern arith_uint256 nMinimumCumulativeDiff;
+
+/** Ticket slot we will assume exists on some valid chain **/
+extern uint64_t nTicketSlot;
 
 /** Best header we've seen so far (used for getheaders queries' starting points). */
 extern CBlockIndex *pindexBestHeader;
@@ -348,6 +357,10 @@ bool TestLockPointValidity(const LockPoints* lp);
  */
 bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp = nullptr, bool useExistingLockPoints = false);
 
+// HD
+bool LoadTicketView();
+bool LoadRelationView();
+
 /**
  * Closure representing one script verification
  * Note that this stores references to the spending transaction 
@@ -440,11 +453,20 @@ bool ResetBlockFailureFlags(CBlockIndex *pindex);
 /** The currently-connected chain of blocks (protected by cs_main). */
 extern CChain chainActive;
 
+/** The currently ticket price (protected by cs_main). */
+extern uint64_t ticketPriceActive;
+
 /** Global variable that points to the coins database (protected by cs_main) */
 extern CCoinsViewDB *pcoinsdbview;
 
 /** Global variable that points to the active CCoinsView (protected by cs_main) */
 extern CCoinsViewCache *pcoinsTip;
+
+/** Global variable that points to the active CTicketView (protected by cs_main) */
+// extern CCoinsViewDB *pticketview;
+
+/** Global variable that points to the active CRelationView (protected by cs_main) */
+// extern CCoinwView *prelationview;
 
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
@@ -455,6 +477,8 @@ extern CBlockTreeDB *pblocktree;
  * This is also true for mempool checks.
  */
 int GetSpendHeight(const CCoinsViewCache& inputs);
+
+bool TestTicket(const int height, const CTicketRef ticket);
 
 extern VersionBitsCache versionbitscache;
 

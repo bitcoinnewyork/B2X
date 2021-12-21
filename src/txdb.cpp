@@ -307,6 +307,55 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
     return true;
 }
 
+// HD
+bool CBlockTreeDB::LoadBlockIndexGutsHD(const Consensus::Params& consensusParams, std::function<CBlockIndex*(const uint256&)> insertBlockIndex)
+{
+    std::unique_ptr<CDBIterator> pcursor(NewIterator());
+
+    pcursor->Seek(std::make_pair(DB_BLOCK_INDEX, uint256()));
+
+    // Load mapBlockIndex
+    while (pcursor->Valid()) {
+        boost::this_thread::interruption_point();
+        std::pair<char, uint256> key;
+        if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
+            CDiskBlockIndex diskindex;
+            if (pcursor->GetValue(diskindex)) {
+                // Construct block index object
+                CBlockIndex* pindexNew = insertBlockIndex(diskindex.GetBlockHash());
+                pindexNew->pprev          = insertBlockIndex(diskindex.hashPrev);
+                pindexNew->nHeight        = diskindex.nHeight;
+                pindexNew->nFile          = diskindex.nFile;
+                pindexNew->nDataPos       = diskindex.nDataPos;
+                pindexNew->nUndoPos       = diskindex.nUndoPos;
+                pindexNew->nVersion       = diskindex.nVersion;
+                pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
+                pindexNew->nTime          = diskindex.nTime;
+                pindexNew->nNonce         = diskindex.nNonce;
+                pindexNew->nStatus        = diskindex.nStatus;
+                pindexNew->nTx            = diskindex.nTx;
+                pindexNew->genSign        = diskindex.genSign;
+                pindexNew->nPlotID        = diskindex.nPlotID;
+                pindexNew->nBaseTarget    = diskindex.nBaseTarget;
+                pindexNew->nDeadline      = diskindex.nDeadline;
+
+                auto params = Params();
+                //TODO: fix genesis block
+                //if (pindexNew->nHeight != 0 && !CheckProofOfCapacity(pindexNew->genSign, pindexNew->nHeight, pindexNew->nPlotID, pindexNew->nNonce, pindexNew->nBaseTarget, pindexNew->nDeadline, params.TargetDeadline()))
+                 //   return error("%s: CheckProofOfCapacity failed: %s", __func__, pindexNew->ToString());
+
+                pcursor->Next();
+            } else {
+                return error("%s: failed to read value", __func__);
+            }
+        } else {
+            break;
+        }
+    }
+
+    return true;
+}
+
 namespace {
 
 //! Legacy class to deserialize pre-pertxout database entries without reindex.
