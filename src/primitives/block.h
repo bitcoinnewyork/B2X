@@ -39,7 +39,15 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint256 nNonce;
+
+    // Equihash
     std::vector<unsigned char> nSolution;  // Equihash solution.
+
+    //poc
+    uint256 genSign;
+    uint64_t nPlotID;
+    uint64_t nBaseTarget;
+    uint64_t nDeadline;
 
     CBlockHeader()
     {
@@ -84,6 +92,12 @@ public:
         nBits = 0;
         nNonce.SetNull();
         nSolution.clear();
+
+        // poc
+        genSign.SetNull();
+        nPlotID = 0;
+        nBaseTarget = 0;
+        nDeadline = 0;
     }
 
     bool IsNull() const
@@ -98,10 +112,24 @@ public:
     {
         return (int64_t)nTime;
     }
+
+    void parseHDPocParams () {
+        // parse nSolution to Poc params
+        // genSign;
+        // nPlotID ;
+        // nBaseTarget;
+        // nDeadline;
+        // TBD: double check endian.
+        memcpy(&genSign, &nSolution[0], 32);
+        memcpy(&nPlotID, &nSolution[32], 8);
+        memcpy(&nBaseTarget, &nSolution[40], 4);
+        memcpy(&nDeadline, nSolution[44], 4);    
+    }
 };
 
 
 //TODO merge with above??
+/****
 class CBlockHeaderHD
 {
 public:
@@ -164,7 +192,7 @@ public:
         return (int64_t)nTime;
     }
 };
-
+***/
 
 
 class CBlock : public CBlockHeader
@@ -214,12 +242,18 @@ public:
         block.nBits          = nBits;
         block.nNonce         = nNonce;
         block.nSolution      = nSolution;
+        // poc
+        block.genSign        = genSign;
+        block.nPlotID        = nPlotID;
+        block.nBaseTarget    = nBaseTarget;
+        block.nDeadline      = nDeadline;
         return block;
     }
 
     std::string ToString() const;
 };
 
+/***
 class CBlock : public CBlockHeaderHD
 {
 public:
@@ -273,7 +307,7 @@ public:
 
     std::string ToString() const;
 };
-
+***/
 
 /**
  * Custom serializer for CBlockHeader that omits the nonce and solution, for use

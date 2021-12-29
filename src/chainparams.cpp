@@ -116,6 +116,10 @@ public:
         consensus.powLimitProgStart = uint256S("000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.powLimitLegacy = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 
+        // Poc Fork HD
+	    consensus.nMinimumCumulativeDiff = uint256S("0x00");
+        consensus.HDPocForkHeight = 700000; //TBD 
+
         //based on https://github.com/BTCGPU/BTCGPU/issues/78
         consensus.nPowAveragingWindow = 30;
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
@@ -304,7 +308,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000002830dab7f76dbb7d63");
 
         // HD
-	consensus.nMinimumCumulativeDiff = uint256S("0x00");
+	    consensus.nMinimumCumulativeDiff = uint256S("0x00");
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x0000000002e9e7b00e1f6dc5123a04aad68dd0f0968d8c7aa45f6640795c37b1"); //1135275

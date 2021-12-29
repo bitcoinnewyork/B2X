@@ -1024,7 +1024,11 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus:
 
     // Check ProgPow/Equihash solution
     bool postfork = false;
-    if (block.nHeight >= (uint32_t)consensusParams.ProgForkHeight) {
+    if (block.nHeight >= (uint32_t)consensusParams.HDPocForkHeight) {
+        block.parseHDPocParams();
+        // handling HD Fork Blocks
+        
+    } else if (block.nHeight >= (uint32_t)consensusParams.ProgForkHeight) {
         postfork = true;
         if (!CheckProgPow(&block, Params())) {
             return error("ReadBlockFromDisk: Errors in block header at %s (bad Progpow solution)", 
